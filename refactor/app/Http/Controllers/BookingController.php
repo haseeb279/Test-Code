@@ -1,3 +1,5 @@
+/* The BookingController class in PHP handles booking-related operations such as retrieving, storing,
+updating jobs, sending notifications, and managing job details. */
 <?php
 
 namespace DTApi\Http\Controllers;
@@ -195,63 +197,45 @@ class BookingController extends Controller
     public function distanceFeed(Request $request)
     {
         $data = $request->all();
+        $jobid = $data['jobid'] ?? null;
 
-        if (isset($data['distance']) && $data['distance'] != "") {
-            $distance = $data['distance'];
-        } else {
-            $distance = "";
-        }
-        if (isset($data['time']) && $data['time'] != "") {
-            $time = $data['time'];
-        } else {
-            $time = "";
-        }
-        if (isset($data['jobid']) && $data['jobid'] != "") {
-            $jobid = $data['jobid'];
-        }
-
-        if (isset($data['session_time']) && $data['session_time'] != "") {
-            $session = $data['session_time'];
-        } else {
-            $session = "";
-        }
-
-        if ($data['flagged'] == 'true') {
-            if($data['admincomment'] == '') return "Please, add comment";
-            $flagged = 'yes';
-        } else {
-            $flagged = 'no';
-        }
-        
-        if ($data['manually_handled'] == 'true') {
-            $manually_handled = 'yes';
-        } else {
-            $manually_handled = 'no';
-        }
-
-        if ($data['by_admin'] == 'true') {
-            $by_admin = 'yes';
-        } else {
-            $by_admin = 'no';
-        }
-
-        if (isset($data['admincomment']) && $data['admincomment'] != "") {
-            $admincomment = $data['admincomment'];
-        } else {
-            $admincomment = "";
-        }
-        if ($time || $distance) {
-
-            $affectedRows = Distance::where('job_id', '=', $jobid)->update(array('distance' => $distance, 'time' => $time));
-        }
-
-        if ($admincomment || $session || $flagged || $manually_handled || $by_admin) {
-
-            $affectedRows1 = Job::where('id', '=', $jobid)->update(array('admin_comments' => $admincomment, 'flagged' => $flagged, 'session_time' => $session, 'manually_handled' => $manually_handled, 'by_admin' => $by_admin));
-
-        }
+        $affectedRows = $this->updateDistance($data, $jobid);
+        $affectedRows1 = $this->updateJobData($data, $jobid);
 
         return response('Record updated!');
+    }
+
+    private function updateDistance($data, $jobid)
+    {
+        $distance = $data['distance'] ?? '';
+        $time = $data['time'] ?? '';
+
+        if ($distance || $time) {
+            return Distance::where('job_id', '=', $jobid)->update(['distance' => $distance, 'time' => $time]);
+        }
+
+        return 0;
+    }
+
+    private function updateJobData($data, $jobid)
+    {
+        $admincomment = $data['admincomment'] ?? '';
+        $flagged = $data['flagged'] == 'true' ? 'yes' : 'no';
+        $session = $data['session_time'] ?? '';
+        $manually_handled = $data['manually_handled'] == 'true' ? 'yes' : 'no';
+        $by_admin = $data['by_admin'] == 'true' ? 'yes' : 'no';
+
+        if ($admincomment || $flagged || $session || $manually_handled || $by_admin) {
+            return Job::where('id', '=', $jobid)->update([
+                'admin_comments' => $admincomment,
+                'flagged' => $flagged,
+                'session_time' => $session,
+                'manually_handled' => $manually_handled,
+                'by_admin' => $by_admin
+            ]);
+        }
+
+        return 0;
     }
 
     public function reopen(Request $request)
